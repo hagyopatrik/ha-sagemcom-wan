@@ -11,7 +11,7 @@ jobs:
   zip:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Set version from tag
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
