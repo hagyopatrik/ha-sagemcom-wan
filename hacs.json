@@ -1,0 +1,7 @@
+{
+  "name": "Sagemcom F@st WAN Monitor",
+  "homeassistant": "2025.1.0",
+  "render_readme": true,
+  "zip_release": true,
+  "filename": "sagemcom_wan.zip"
+}
