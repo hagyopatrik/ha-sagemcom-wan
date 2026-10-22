@@ -1,14 +1,23 @@
 {
   "domain": "sagemcom_wan",
   "name": "Sagemcom F@st WAN Monitor",
-  "codeowners": ["@hagyopatrik"],
+  "categories": [
+    "computers_network.routers_network"
+  ],
+  "codeowners": [
+    "@hagyopatrik"
+  ],
   "config_flow": true,
   "dependencies": [],
   "documentation": "https://github.com/hagyopatrik/ha-sagemcom-wan",
   "integration_type": "device",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/hagyopatrik/ha-sagemcom-wan/issues",
-  "loggers": ["sagemcom_api"],
-  "requirements": ["sagemcom_api==1.5.0"],
+  "loggers": [
+    "sagemcom_api"
+  ],
+  "requirements": [
+    "sagemcom_api==1.5.0"
+  ],
   "version": "1.0.0"
 }
