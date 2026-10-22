@@ -1,9 +1,6 @@
 {
   "domain": "sagemcom_wan",
   "name": "Sagemcom F@st WAN Monitor",
-  "categories": [
-    "computers_network.routers_network"
-  ],
   "codeowners": [
     "@hagyopatrik"
   ],
