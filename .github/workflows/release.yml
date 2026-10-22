@@ -1,0 +1,24 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  zip:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set version from tag
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          jq --arg v "$VERSION" '.version = $v' custom_components/sagemcom_wan/manifest.json > m.json
+          mv m.json custom_components/sagemcom_wan/manifest.json
+      - name: Zip integration
+        run: cd custom_components/sagemcom_wan && zip -r ../../sagemcom_wan.zip . -x "__pycache__/*"
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: sagemcom_wan.zip
