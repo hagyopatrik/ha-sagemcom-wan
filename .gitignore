@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+sagemcom_dump.json
+sagemcom_hits.txt
+.DS_Store
