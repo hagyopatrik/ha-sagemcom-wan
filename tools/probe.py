@@ -4,30 +4,35 @@
     pip install sagemcom_api
     python tools/probe.py 192.168.1.1 admin "PASSWORD"
 
-Tests login (http/https, all hash methods), runs WAN detection and writes
-sagemcom_dump.json for bug reports. Remove public IPs / serials before sharing.
+Tests login (http/https, all hash methods), prints the WAN detection and the
+extra metrics, and writes sagemcom_dump.json. The dump is NOT anonymized:
+use "Download diagnostics" in Home Assistant when sharing data publicly.
 """
 from __future__ import annotations
 
 import asyncio
-import importlib.util
+import importlib
 import json
 import pathlib
 import sys
+import time
+import types
 
 import aiohttp
 from sagemcom_api.client import SagemcomClient
 from sagemcom_api.enums import EncryptionMethod
 
-_path = pathlib.Path(__file__).resolve().parents[1] / "custom_components" / "sagemcom_wan" / "wan_detect.py"
-_spec = importlib.util.spec_from_file_location("wan_detect", _path)
-wd = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(wd)
+_PKG = "sagemcom_wan_pure"
+_pkg = types.ModuleType(_PKG)
+_pkg.__path__ = [str(pathlib.Path(__file__).resolve().parents[1] / "custom_components" / "sagemcom_wan")]
+sys.modules[_PKG] = _pkg
+wd = importlib.import_module(f"{_PKG}.wan_detect")
+mt = importlib.import_module(f"{_PKG}.metrics")
 
 
 async def try_login(host: str, user: str, pw: str):
     for ssl in (False, True):
-        for method in EncryptionMethod:
+        for method in (EncryptionMethod.SHA512, EncryptionMethod.MD5, EncryptionMethod.MD5_NONCE):
             session = aiohttp.ClientSession(
                 connector=aiohttp.TCPConnector(ssl=False), timeout=aiohttp.ClientTimeout(total=20)
             )
@@ -59,9 +64,14 @@ async def main(host: str, user: str, pw: str) -> None:
         pathlib.Path("sagemcom_dump.json").write_text(
             json.dumps(trees, indent=1, ensure_ascii=False, default=str), encoding="utf-8"
         )
-        print("\n=== Detection result ===")
+        print("\n=== Detection ===")
         print(json.dumps(wd.detect(trees), indent=2, ensure_ascii=False))
-        print("\nRaw data written to sagemcom_dump.json")
+        print("\n=== Metrics ===")
+        m = mt.extract(trees, None, time.monotonic())
+        print(json.dumps({k: v for k, v in m.items() if not k.startswith("_")}, indent=2, default=str))
+        print("\n=== Device ===")
+        print(mt.device_info(trees))
+        print("\nRaw data written to sagemcom_dump.json (contains personal data, do not publish)")
     finally:
         try:
             await client.logout()
