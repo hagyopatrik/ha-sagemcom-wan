@@ -15,7 +15,8 @@
     },
     "error": {
       "cannot_connect": "Cannot connect to the router.",
-      "invalid_auth": "Invalid username or password (or no supported authentication method).",
+      "invalid_auth": "Invalid username or password.",
+      "login_retry": "The router is temporarily blocking logins after failed attempts. Wait a minute and try again.",
       "too_many_sessions": "The router has too many open sessions. Log out of the web interface and try again.",
       "unsupported": "The router does not expose the /cgi/json-req API.",
       "unknown": "Unexpected error, check the logs."

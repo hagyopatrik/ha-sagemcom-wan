@@ -20,14 +20,13 @@ from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResu
 from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_SSL, CONF_USERNAME, CONF_VERIFY_SSL
 from homeassistant.core import callback
 
-from .client import async_detect_and_login, create_client
+from .client import async_find_method
 from .const import (
     CONF_ENCRYPTION_METHOD,
     CONF_SCAN_INTERVAL,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_USERNAME,
     DOMAIN,
-    ENCRYPTION_AUTO,
     MAX_SCAN_INTERVAL,
     MIN_SCAN_INTERVAL,
 )
@@ -53,22 +52,21 @@ class SagemcomWanConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         errors: dict[str, str] = {}
         if user_input is not None:
-            await self.async_set_unique_id(user_input[CONF_HOST].strip().lower())
+            data = {
+                **user_input,
+                CONF_HOST: user_input[CONF_HOST].strip(),
+                CONF_USERNAME: user_input[CONF_USERNAME].strip(),
+            }
+            await self.async_set_unique_id(data[CONF_HOST].lower())
             self._abort_if_unique_id_configured()
 
-            data = {**user_input, CONF_ENCRYPTION_METHOD: ENCRYPTION_AUTO}
-            client = create_client(self.hass, data)
+            method = None
             try:
-                method = await async_detect_and_login(client)
-                if method is None:
-                    errors["base"] = "invalid_auth"
-                else:
-                    try:
-                        await client.logout()
-                    except Exception:  # noqa: BLE001
-                        pass
-            except (AuthenticationException, UnauthorizedException, LoginRetryErrorException):
+                method = await async_find_method(self.hass, data)
+            except (AuthenticationException, UnauthorizedException):
                 errors["base"] = "invalid_auth"
+            except LoginRetryErrorException:
+                errors["base"] = "login_retry"
             except MaximumSessionCountException:
                 errors["base"] = "too_many_sessions"
             except UnsupportedHostException:
@@ -78,12 +76,10 @@ class SagemcomWanConfigFlow(ConfigFlow, domain=DOMAIN):
             except Exception:  # noqa: BLE001
                 _LOGGER.exception("Unexpected error during login")
                 errors["base"] = "unknown"
-            finally:
-                await client.close()
 
             if not errors:
-                data[CONF_ENCRYPTION_METHOD] = method
-                return self.async_create_entry(title=f"Sagemcom F@st ({user_input[CONF_HOST]})", data=data)
+                data[CONF_ENCRYPTION_METHOD] = str(method)
+                return self.async_create_entry(title=f"Sagemcom F@st ({data[CONF_HOST]})", data=data)
 
         return self.async_show_form(
             step_id="user",

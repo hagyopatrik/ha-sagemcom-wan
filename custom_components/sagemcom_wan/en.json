@@ -1,0 +1,51 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Sagemcom F@st router",
+        "description": "Enter the router's admin credentials. The authentication method (MD5 / SHA512) is detected automatically.",
+        "data": {
+          "host": "Host",
+          "username": "Username",
+          "password": "Password",
+          "ssl": "Use HTTPS",
+          "verify_ssl": "Verify SSL certificate"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot connect to the router.",
+      "invalid_auth": "Invalid username or password.",
+      "login_retry": "The router is temporarily blocking logins after failed attempts. Wait a minute and try again.",
+      "too_many_sessions": "The router has too many open sessions. Log out of the web interface and try again.",
+      "unsupported": "The router does not expose the /cgi/json-req API.",
+      "unknown": "Unexpected error, check the logs."
+    },
+    "abort": {
+      "already_configured": "This router is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Options",
+        "data": {
+          "scan_interval": "Polling interval (seconds)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "connection_type": {
+        "name": "Connection type",
+        "state": {
+          "fiber": "Fiber",
+          "mobile": "Mobile backup",
+          "offline": "Offline",
+          "unknown": "Unknown"
+        }
+      }
+    }
+  }
+}
