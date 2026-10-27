@@ -1,0 +1,105 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Sagemcom F@st router",
+        "description": "Add meg a router admin belépési adatait. A hitelesítési módot (MD5 / SHA512) automatikusan felismeri.",
+        "data": {
+          "host": "Cím",
+          "username": "Felhasználónév",
+          "password": "Jelszó",
+          "ssl": "HTTPS használata",
+          "verify_ssl": "SSL tanúsítvány ellenőrzése"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Nem sikerült csatlakozni a routerhez.",
+      "invalid_auth": "Hibás felhasználónév vagy jelszó.",
+      "login_retry": "A router a sikertelen próbálkozások miatt ideiglenesen tiltja a belépést. Várj egy percet, és próbáld újra.",
+      "too_many_sessions": "Túl sok nyitott munkamenet. Jelentkezz ki a router webes felületéről, és próbáld újra.",
+      "unsupported": "A router nem támogatja a /cgi/json-req API-t.",
+      "unknown": "Váratlan hiba, nézd meg a naplót."
+    },
+    "abort": {
+      "already_configured": "Ez a router már be van állítva."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Beállítások",
+        "data": {
+          "scan_interval": "Lekérdezési időköz (másodperc)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "connection_type": {
+        "name": "Kapcsolat típusa",
+        "state": {
+          "fiber": "Fiber",
+          "mobile": "Mobil tartalék",
+          "offline": "Offline",
+          "unknown": "Ismeretlen"
+        }
+      },
+      "optical_rx_power": {
+        "name": "Optikai vételi szint"
+      },
+      "optical_tx_power": {
+        "name": "Optikai adási szint"
+      },
+      "optical_temperature": {
+        "name": "Optikai modul hőmérséklet"
+      },
+      "optical_voltage": {
+        "name": "Optikai modul feszültség"
+      },
+      "optical_bias_current": {
+        "name": "Lézer előfeszítő áram"
+      },
+      "optical_alarm": {
+        "name": "Optikai riasztás"
+      },
+      "gpon_state": {
+        "name": "GPON állapot"
+      },
+      "download_rate": {
+        "name": "Letöltési sebesség"
+      },
+      "upload_rate": {
+        "name": "Feltöltési sebesség"
+      },
+      "fiber_download_today": {
+        "name": "Fiber letöltés ma"
+      },
+      "fiber_upload_today": {
+        "name": "Fiber feltöltés ma"
+      },
+      "mobile_download_today": {
+        "name": "Mobil letöltés ma"
+      },
+      "mobile_upload_today": {
+        "name": "Mobil feltöltés ma"
+      },
+      "public_ipv4": {
+        "name": "Nyilvános IPv4 cím"
+      },
+      "fiber_connected_since": {
+        "name": "Fiber kapcsolat kezdete"
+      },
+      "wan_last_error": {
+        "name": "WAN utolsó kapcsolódási hiba"
+      },
+      "lte_modem_status": {
+        "name": "LTE modem állapot"
+      },
+      "lte_rssi": {
+        "name": "LTE RSSI (nyers)"
+      }
+    }
+  }
+}
