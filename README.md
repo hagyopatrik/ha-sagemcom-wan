@@ -10,11 +10,6 @@ Built and tested on the **Sagemcom F@st 5670AXv2** (Telekom Hungary). Other F@st
 `/cgi/json-req` API and the TR-181 data model should work; sensors are only created for data the
 router actually exposes.
 
-> [!IMPORTANT]
-> **The router's web interface (web GUI) may be inaccessible while this Home Assistant integration is running.**
-> If you need to log in to the router's web interface, stop/disable the integration and wait approximately **1 minute**.
-> You should then be able to log in normally. Remember to start the integration again afterward.
-
 ## Sensors
 
 | Sensor | Unit | Notes |
@@ -47,7 +42,7 @@ Copy `custom_components/sagemcom_wan` to `/config/custom_components/` and restar
 
 **Settings → Devices & services → Add integration → Sagemcom F@st WAN Monitor**
 
-| Field | F@st 5670AXv2 (Telekom HU) |
+| Field | F@st 5670 (Telekom HU) |
 |---|---|
 | Host | `192.168.1.1` |
 | Username | `admin` |
@@ -113,8 +108,7 @@ The probe dump is **not** anonymized.
 ## Notes
 
 - The router allows a limited number of sessions. Being logged in to the web UI at the same time
-  can cause temporary login errors. If the web GUI is inaccessible, stop/disable this integration,
-  wait about one minute, log in, then re-enable the integration.
+  can cause temporary login errors.
 - Uses [python-sagemcom-api](https://github.com/iMicknl/python-sagemcom-api).
   Not affiliated with Sagemcom or Deutsche Telekom.
 
