@@ -3,25 +3,33 @@
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://hacs.xyz)
 [![Validate](https://github.com/hagyopatrik/ha-sagemcom-wan/actions/workflows/validate.yml/badge.svg)](https://github.com/hagyopatrik/ha-sagemcom-wan/actions/workflows/validate.yml)
 
-Home Assistant integration that shows whether a **Sagemcom F@st** router is currently
-connected through **fiber (GPON)** or its **LTE mobile backup**.
+Home Assistant integration for **Sagemcom F@st** routers: shows whether the router is connected
+through **fiber (GPON)** or its **LTE mobile backup**, plus optical signal levels, traffic and WAN details.
+
+Built and tested on the **Sagemcom F@st 5670AXv2** (Telekom Hungary). Other F@st models that use the
+`/cgi/json-req` API and the TR-181 data model should work; sensors are only created for data the
+router actually exposes.
 
 > [!IMPORTANT]
 > **The router's web interface (web GUI) may be inaccessible while this Home Assistant integration is running.**
 > If you need to log in to the router's web interface, stop/disable the integration and wait approximately **1 minute**.
 > You should then be able to log in normally. Remember to start the integration again afterward.
 
-**Tested device:** **Sagemcom F@st 5670 v2**, supplied by **Magyar Telekom (Hungary)**.
-Other F@st models may work too, but have not been verified. If the integration works with another
-router model, please let us know by opening an issue or contributing feedback!
+## Sensors
 
-## Features
-
-- UI setup (config flow), authentication method detected automatically (MD5 / MD5_NONCE / SHA512)
-- `Connection type` sensor: `fiber`, `mobile`, `offline`, `unknown`
-- Attributes: `on_mobile`, `interface`, `chain`, `fiber_status`, `mobile_status`, `gpon_state`
-- Configurable polling interval (default 30 s)
-- Diagnostics download for reporting unsupported models
+| Sensor | Unit | Notes |
+|---|---|---|
+| Connection type | `fiber` / `mobile` / `offline` / `unknown` | attribute `on_mobile` for automations |
+| Optical RX power | dBm | received light level from the fiber |
+| Optical TX power | dBm | |
+| Download / upload rate | Mbit/s | calculated from WAN counters between polls |
+| Fiber download / upload today | GB | resets daily (router counter) |
+| Mobile download / upload today | GB | LTE backup data usage |
+| Public IPv4 address | | |
+| Fiber connected since | timestamp | last status change of the fiber WAN interface |
+| LTE modem status | | e.g. `DORMANT` while on fiber |
+| GPON state, optical alarm, WAN last error | | diagnostic |
+| Optical module temperature, voltage, bias current, LTE RSSI (raw) | | diagnostic, voltage/bias disabled by default |
 
 ## Installation
 
@@ -39,14 +47,14 @@ Copy `custom_components/sagemcom_wan` to `/config/custom_components/` and restar
 
 **Settings → Devices & services → Add integration → Sagemcom F@st WAN Monitor**
 
-| Field | F@st 5670 v2 (Magyar Telekom HU) |
+| Field | F@st 5670AXv2 (Telekom HU) |
 |---|---|
 | Host | `192.168.1.1` |
 | Username | `admin` |
 | Password | router admin password |
 | Use HTTPS | off |
 
-Polling interval: **Configure** on the integration card.
+Polling interval: **Configure** on the integration card (default 30 s).
 
 ## How detection works
 
@@ -64,7 +72,7 @@ IP_BACKUP > LTE_MODEM                                     -> mobile
 
 VoIP, IPTV, management and LAN interfaces are ignored.
 
-## Example automation
+## Example automations
 
 ```yaml
 automation:
@@ -78,22 +86,35 @@ automation:
       - action: notify.notify
         data:
           message: Internet switched to LTE backup
+
+  - alias: Weak fiber signal
+    triggers:
+      - trigger: numeric_state
+        entity_id: sensor.sagemcom_f_st_192_168_1_1_optical_rx_power
+        below: -27
+        for: "00:10:00"
+    actions:
+      - action: notify.notify
+        data:
+          message: "Fiber RX power is low: {{ trigger.to_state.state }} dBm"
 ```
+
+Check the actual entity IDs on the device page.
 
 ## Reporting another router model
 
-1. `pip install sagemcom_api`
-2. `python tools/probe.py 192.168.1.1 admin "PASSWORD"`
-3. Open an issue with the output and `sagemcom_dump.json` (remove public IPs and serial numbers),
-   or attach **Download diagnostics** from the device page.
+Use **Settings → Devices → Sagemcom F@st → ⋮ → Download diagnostics** and attach the file to an issue.
+Public IPs, IPv6 prefixes, MAC addresses, serial numbers and PPPoE credentials are removed, but
+please check the file before posting.
 
-If the integration works on a model other than the **Sagemcom F@st 5670 v2**, please let us know!
+Without Home Assistant: `pip install sagemcom_api` and `python tools/probe.py 192.168.1.1 admin "PASSWORD"`.
+The probe dump is **not** anonymized.
 
 ## Notes
 
-- The router allows a limited number of sessions. While the integration is running, the router's web
-  interface may not be accessible. Stop/disable the integration and wait about **1 minute** before
-  trying to log in to the web interface.
+- The router allows a limited number of sessions. Being logged in to the web UI at the same time
+  can cause temporary login errors. If the web GUI is inaccessible, stop/disable this integration,
+  wait about one minute, log in, then re-enable the integration.
 - Uses [python-sagemcom-api](https://github.com/iMicknl/python-sagemcom-api).
   Not affiliated with Sagemcom or Deutsche Telekom.
 
