@@ -8,7 +8,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
-# XPaths fetched for detection. Paths the router rejects are skipped.
+# XPaths fetched every poll. Paths the router rejects are skipped.
 QUERIES: dict[str, str] = {
     "routing": "Device/Routing",
     "ip": "Device/IP/Interfaces",
@@ -54,25 +54,44 @@ def field(item: Any, name: str, default: Any = None) -> Any:
     return default
 
 
-def _find_key(node: Any, name: str) -> Any:
+def find_key(node: Any, name: str) -> Any:
     """Depth-first search for the first scalar value with the given key."""
     target = _nkey(name)
     if isinstance(node, dict):
         for k, v in node.items():
             if _nkey(k) == target and not isinstance(v, (dict, list)):
                 return v
-            found = _find_key(v, name)
+            found = find_key(v, name)
             if found is not None:
                 return found
     elif isinstance(node, list):
         for v in node:
-            found = _find_key(v, name)
+            found = find_key(v, name)
             if found is not None:
                 return found
     return None
 
 
-def _iter_items(node: Any):
+def find_key_dict(node: Any, name: str) -> Any:
+    """Return the first dict/list value stored under key `name`."""
+    target = _nkey(name)
+    if isinstance(node, dict):
+        for k, v in node.items():
+            if _nkey(k) == target and isinstance(v, (dict, list)):
+                return v
+            found = find_key_dict(v, name)
+            if found is not None:
+                return found
+    elif isinstance(node, list):
+        for v in node:
+            found = find_key_dict(v, name)
+            if found is not None:
+                return found
+    return None
+
+
+def iter_items(node: Any):
+    """Yield every dict inside lists, at any depth below wrapper dicts."""
     if isinstance(node, list):
         for item in node:
             if isinstance(item, dict):
@@ -80,7 +99,7 @@ def _iter_items(node: Any):
     elif isinstance(node, dict):
         for v in node.values():
             if isinstance(v, (list, dict)):
-                yield from _iter_items(v)
+                yield from iter_items(v)
 
 
 def _split_path(path: str) -> list[str]:
@@ -89,10 +108,7 @@ def _split_path(path: str) -> list[str]:
 
 
 def parse_ref(ref: str) -> tuple[str, str] | None:
-    """'Device/IP/Interfaces/Interface[IP_DATA]' -> ('device/ip/interface/interface', 'ip_data').
-
-    Also supports '[@uid=3]' and dotted 'Device.IP.Interface.3.' references.
-    """
+    """'Device/IP/Interfaces/Interface[IP_DATA]' -> ('device/ip/interface/interface', 'ip_data')."""
     segs = _split_path((ref or "").strip())
     sel = None
     for i, s in enumerate(segs):
@@ -122,7 +138,6 @@ def build_index(trees: dict[str, Any]) -> dict[tuple[str, str], dict]:
 
     def walk(node: Any, segs: list[str]) -> None:
         if isinstance(node, list):
-            # list key is plural (Interfaces), references use singular (Interface)
             cont = "/".join(_nseg(s) for s in segs)
             conts = {cont, f"{cont}/{_nseg(segs[-1])}" if segs else cont}
             for item in node:
@@ -201,21 +216,12 @@ def _is_up(value: Any) -> bool:
     return str(value or "").strip().lower() == "up"
 
 
-# ---------------------------------------------------------------- detection
-def detect(trees: dict[str, Any]) -> dict[str, Any]:
-    """Return a dict with 'connection' in STATES plus diagnostic attributes.
-
-    Decision is based on the status of the internet data IP interfaces
-    (e.g. F@st 5670 Telekom HU):
-        IP_DATA   > PPP_DATA > VLAN_DATA > GPON_DATA > OPTICAL0   (fiber)
-        IP_BACKUP > LTE_MODEM                                     (mobile backup)
-    """
+def classify_interfaces(trees: dict[str, Any]) -> tuple[list[dict], list[dict]]:
+    """Return (fiber, mobile) internet IP interfaces with alias / status / chain / item."""
     idx = build_index({QUERIES.get(k, k): v for k, v in trees.items()})
-    gpon_state = _find_key(trees.get("optical"), "gpon_state")
-
     fiber: list[dict] = []
     mobile: list[dict] = []
-    for item in _iter_items(trees.get("ip")):
+    for item in iter_items(trees.get("ip")):
         alias = str(field(item, "alias") or "")
         if not alias or any(h in alias.lower() for h in NON_DATA):
             continue
@@ -224,12 +230,26 @@ def detect(trees: dict[str, Any]) -> dict[str, Any]:
             "alias": alias,
             "status": str(field(item, "status") or "").upper(),
             "chain": " > ".join(str(c["alias"]) for c in chain),
+            "item": item,
         }
         kind = classify_chain(chain)
         if kind == STATE_FIBER:
             fiber.append(entry)
         elif kind == STATE_MOBILE:
             mobile.append(entry)
+    return fiber, mobile
+
+
+# ---------------------------------------------------------------- detection
+def detect(trees: dict[str, Any]) -> dict[str, Any]:
+    """Return a dict with 'connection' in STATES plus diagnostic attributes.
+
+    F@st 5670 (Telekom HU):
+        IP_DATA   > PPP_DATA > VLAN_DATA > GPON_DATA > OPTICAL0   (fiber)
+        IP_BACKUP > LTE_MODEM                                     (mobile backup)
+    """
+    gpon_state = find_key(trees.get("optical"), "gpon_state")
+    fiber, mobile = classify_interfaces(trees)
 
     fiber_up = next((e for e in fiber if _is_up(e["status"])), None)
     if fiber_up and gpon_state not in (None, "") and str(gpon_state).upper() != "OPERATIONAL":

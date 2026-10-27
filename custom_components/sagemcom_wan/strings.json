@@ -45,6 +45,60 @@
           "offline": "Offline",
           "unknown": "Unknown"
         }
+      },
+      "optical_rx_power": {
+        "name": "Optical RX power"
+      },
+      "optical_tx_power": {
+        "name": "Optical TX power"
+      },
+      "optical_temperature": {
+        "name": "Optical module temperature"
+      },
+      "optical_voltage": {
+        "name": "Optical module voltage"
+      },
+      "optical_bias_current": {
+        "name": "Optical laser bias current"
+      },
+      "optical_alarm": {
+        "name": "Optical alarm"
+      },
+      "gpon_state": {
+        "name": "GPON state"
+      },
+      "download_rate": {
+        "name": "Download rate"
+      },
+      "upload_rate": {
+        "name": "Upload rate"
+      },
+      "fiber_download_today": {
+        "name": "Fiber download today"
+      },
+      "fiber_upload_today": {
+        "name": "Fiber upload today"
+      },
+      "mobile_download_today": {
+        "name": "Mobile download today"
+      },
+      "mobile_upload_today": {
+        "name": "Mobile upload today"
+      },
+      "public_ipv4": {
+        "name": "Public IPv4 address"
+      },
+      "fiber_connected_since": {
+        "name": "Fiber connected since"
+      },
+      "wan_last_error": {
+        "name": "WAN last connection error"
+      },
+      "lte_modem_status": {
+        "name": "LTE modem status"
+      },
+      "lte_rssi": {
+        "name": "LTE RSSI (raw)"
       }
     }
   }
