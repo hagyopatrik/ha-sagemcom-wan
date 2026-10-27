@@ -6,8 +6,14 @@
 Home Assistant integration that shows whether a **Sagemcom F@st** router is currently
 connected through **fiber (GPON)** or its **LTE mobile backup**.
 
-Built and tested on the **Sagemcom F@st 5670** (Telekom Hungary). Other F@st models that
-use the `/cgi/json-req` API and the TR-181 data model should work as well.
+> [!IMPORTANT]
+> **The router's web interface (web GUI) may be inaccessible while this Home Assistant integration is running.**
+> If you need to log in to the router's web interface, stop/disable the integration and wait approximately **1 minute**.
+> You should then be able to log in normally. Remember to start the integration again afterward.
+
+**Tested device:** **Sagemcom F@st 5670 v2**, supplied by **Magyar Telekom (Hungary)**.
+Other F@st models may work too, but have not been verified. If the integration works with another
+router model, please let us know by opening an issue or contributing feedback!
 
 ## Features
 
@@ -33,7 +39,7 @@ Copy `custom_components/sagemcom_wan` to `/config/custom_components/` and restar
 
 **Settings → Devices & services → Add integration → Sagemcom F@st WAN Monitor**
 
-| Field | F@st 5670 (Telekom HU) |
+| Field | F@st 5670 v2 (Magyar Telekom HU) |
 |---|---|
 | Host | `192.168.1.1` |
 | Username | `admin` |
@@ -81,10 +87,13 @@ automation:
 3. Open an issue with the output and `sagemcom_dump.json` (remove public IPs and serial numbers),
    or attach **Download diagnostics** from the device page.
 
+If the integration works on a model other than the **Sagemcom F@st 5670 v2**, please let us know!
+
 ## Notes
 
-- The router allows a limited number of sessions. Being logged in to the web UI at the same time
-  can cause temporary login errors.
+- The router allows a limited number of sessions. While the integration is running, the router's web
+  interface may not be accessible. Stop/disable the integration and wait about **1 minute** before
+  trying to log in to the web interface.
 - Uses [python-sagemcom-api](https://github.com/iMicknl/python-sagemcom-api).
   Not affiliated with Sagemcom or Deutsche Telekom.
 
