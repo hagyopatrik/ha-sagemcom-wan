@@ -1,73 +1,112 @@
+<div align="center">
+
 # Sagemcom F@st WAN Monitor
 
-[![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://hacs.xyz)
-[![Validate](https://github.com/hagyopatrik/ha-sagemcom-wan/actions/workflows/validate.yml/badge.svg)](https://github.com/hagyopatrik/ha-sagemcom-wan/actions/workflows/validate.yml)
+**Know at a glance whether your internet runs on fiber or LTE backup.**
 
-Home Assistant integration for **Sagemcom F@st** routers: shows whether the router is connected
-through **fiber (GPON)** or its **LTE mobile backup**, plus optical signal levels, traffic and WAN details.
+[![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=flat-square)](https://hacs.xyz)
+[![Validate](https://img.shields.io/github/actions/workflow/status/hagyopatrik/ha-sagemcom-wan/validate.yml?style=flat-square&label=validate)](https://github.com/hagyopatrik/ha-sagemcom-wan/actions/workflows/validate.yml)
+[![Release](https://img.shields.io/github/v/release/hagyopatrik/ha-sagemcom-wan?style=flat-square)](https://github.com/hagyopatrik/ha-sagemcom-wan/releases)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg?style=flat-square)](LICENSE)
 
-Built and tested on the **Sagemcom F@st 5670AXv2** (Telekom Hungary). Other F@st models that use the
-`/cgi/json-req` API and the TR-181 data model should work; sensors are only created for data the
-router actually exposes.
+</div>
 
-## Sensors
+---
 
-| Sensor | Unit | Notes |
+A Home Assistant integration for **Sagemcom F@st** routers. It shows the active WAN connection
+(fiber or mobile backup) and adds sensors for optical signal, traffic and WAN status.
+
+## ✅ Tested device
+
+| Router | Provider | Status |
 |---|---|---|
-| Connection type | `fiber` / `mobile` / `offline` / `unknown` | attribute `on_mobile` for automations |
-| Optical RX power | dBm | received light level from the fiber |
-| Optical TX power | dBm | |
-| Download / upload rate | Mbit/s | calculated from WAN counters between polls |
-| Fiber download / upload today | GB | resets daily (router counter) |
-| Mobile download / upload today | GB | LTE backup data usage |
-| Public IPv4 address | | |
-| Fiber connected since | timestamp | last status change of the fiber WAN interface |
-| LTE modem status | | e.g. `DORMANT` while on fiber |
-| GPON state, optical alarm, WAN last error | | diagnostic |
-| Optical module temperature, voltage, bias current, LTE RSSI (raw) | | diagnostic, voltage/bias disabled by default |
+| **Sagemcom F@st 5670** | Magyar Telekom (Hungary) | Works perfectly |
 
-## Installation
+Other F@st models probably work too, if they use the same web API. See [Compatibility](#-compatibility).
 
-### HACS (recommended)
+> [!IMPORTANT]
+> **Stop the integration before you log in to the router's web interface.**
+>
+> The router allows only a few sessions at the same time. If the integration is running,
+> the web login fails with a *maximum number of connections* error.
+>
+> 1. **Settings → Devices & services → Sagemcom F@st WAN Monitor → ⋮ → Disable**
+> 2. Wait about **1 minute**.
+> 3. Log in to the web interface. It works normally.
+> 4. When you are done, log out and **Enable** the integration again.
 
-1. HACS → three dots menu → **Custom repositories**
-2. Repository: `https://github.com/hagyopatrik/ha-sagemcom-wan`, Type: **Integration**
-3. Install **Sagemcom F@st WAN Monitor** and restart Home Assistant
+## ✨ Features
+
+- **Connection type:** `fiber`, `mobile`, `offline` or `unknown`
+- **Optical signal:** RX / TX power in dBm
+- **Traffic:** current download / upload rate and daily usage for fiber and LTE
+- **WAN info:** public IPv4, connection uptime, last error
+- **LTE backup:** modem status
+- UI setup, login method detected automatically
+- Sensors are only created if your router provides the data
+
+## 📦 Installation
+
+### HACS
+
+1. Open **HACS → ⋮ → Custom repositories**
+2. Add `https://github.com/hagyopatrik/ha-sagemcom-wan` with type **Integration**
+3. Install **Sagemcom F@st WAN Monitor**
+4. Restart Home Assistant
 
 ### Manual
 
-Copy `custom_components/sagemcom_wan` to `/config/custom_components/` and restart Home Assistant.
+Copy `custom_components/sagemcom_wan` into your `/config/custom_components/` folder and restart Home Assistant.
 
-## Configuration
+## ⚙️ Setup
 
 **Settings → Devices & services → Add integration → Sagemcom F@st WAN Monitor**
 
-| Field | F@st 5670 (Telekom HU) |
+| Field | Value |
 |---|---|
 | Host | `192.168.1.1` |
 | Username | `admin` |
-| Password | router admin password |
+| Password | your router admin password |
 | Use HTTPS | off |
 
-Polling interval: **Configure** on the integration card (default 30 s).
+You can change the polling interval under **Configure** (default: 30 seconds).
 
-## How detection works
+## 📊 Sensors
 
-The integration reads `Device/IP/Interfaces` and follows each interface's `LowerLayers` chain down
-to the physical layer:
+| Sensor | Example |
+|---|---|
+| Connection type | `fiber` |
+| Optical RX / TX power | `-25.85 dBm` / `3.32 dBm` |
+| Download / upload rate | `48.2 Mbit/s` |
+| Fiber / mobile usage today | `11.8 GB` |
+| Public IPv4 address | `203.0.113.10` |
+| Fiber connected since | timestamp |
+| LTE modem status | `DORMANT` |
+
+Diagnostic sensors (module temperature, voltage, laser bias, GPON state, alarms) are available on the device page.
+
+<details>
+<summary><b>How does fiber / mobile detection work?</b></summary>
+
+<br>
+
+The integration follows each WAN interface down to the physical layer:
 
 ```
-IP_DATA   > PPP_DATA > VLAN_DATA > GPON_DATA > OPTICAL0   -> fiber
-IP_BACKUP > LTE_MODEM                                     -> mobile
+IP_DATA   → PPP_DATA → VLAN_DATA → GPON_DATA → OPTICAL0   = fiber
+IP_BACKUP → LTE_MODEM                                     = mobile
 ```
 
-- fiber data interface `UP` and GPON state `OPERATIONAL` → **fiber**
-- otherwise mobile interface `UP` → **mobile**
-- both down → **offline**
+- Fiber interface is up and GPON is `OPERATIONAL` → **fiber**
+- Otherwise, LTE interface is up → **mobile**
+- Neither is up → **offline**
 
-VoIP, IPTV, management and LAN interfaces are ignored.
+</details>
 
-## Example automations
+<details>
+<summary><b>Example automation: notify on LTE failover</b></summary>
+
+<br>
 
 ```yaml
 automation:
@@ -81,37 +120,33 @@ automation:
       - action: notify.notify
         data:
           message: Internet switched to LTE backup
-
-  - alias: Weak fiber signal
-    triggers:
-      - trigger: numeric_state
-        entity_id: sensor.sagemcom_f_st_192_168_1_1_optical_rx_power
-        below: -27
-        for: "00:10:00"
-    actions:
-      - action: notify.notify
-        data:
-          message: "Fiber RX power is low: {{ trigger.to_state.state }} dBm"
 ```
 
-Check the actual entity IDs on the device page.
+Check your actual entity ID on the device page.
 
-## Reporting another router model
+</details>
 
-Use **Settings → Devices → Sagemcom F@st → ⋮ → Download diagnostics** and attach the file to an issue.
-Public IPs, IPv6 prefixes, MAC addresses, serial numbers and PPPoE credentials are removed, but
-please check the file before posting.
+## 🤝 Compatibility
 
-Without Home Assistant: `pip install sagemcom_api` and `python tools/probe.py 192.168.1.1 admin "PASSWORD"`.
-The probe dump is **not** anonymized.
+**Tested it on another router? Please let me know!**
 
-## Notes
+Open an [issue](https://github.com/hagyopatrik/ha-sagemcom-wan/issues/new?title=Compatibility%3A%20) and include:
 
-- The router allows a limited number of sessions. Being logged in to the web UI at the same time
-  can cause temporary login errors.
-- Uses [python-sagemcom-api](https://github.com/iMicknl/python-sagemcom-api).
-  Not affiliated with Sagemcom or Deutsche Telekom.
+- Router model and provider
+- Whether it worked (fully, partly, not at all)
+- Optional: **Device page → ⋮ → Download diagnostics** (personal data is removed, but please check the file before posting)
 
-## License
+Every report helps to grow the compatibility list.
 
-MIT
+## 🛠️ Troubleshooting
+
+| Problem | Solution |
+|---|---|
+| *Maximum number of connections* in the web interface | Disable the integration, wait 1 minute, then log in |
+| *Too many open sessions* during setup | Log out of the web interface, wait 1 minute, try again |
+| *Invalid username or password* | Check the admin password on the router's label |
+| A sensor is missing | Your router does not provide that value |
+
+## 📄 License
+
+[MIT](LICENSE) · Built on [python-sagemcom-api](https://github.com/iMicknl/python-sagemcom-api) · Not affiliated with Sagemcom or Magyar Telekom.
